@@ -584,6 +584,7 @@ export default Ember.Component.extend({
         const runningXHRs = this.get('_runningXHRs') || [];
         this._abortRunningXHRs();
 
+        this.set('_loading', true);
         const parameters = Object.assign(
           {},
           this._getNormalizedParameters(this.get('reportParameters')),
@@ -592,6 +593,7 @@ export default Ember.Component.extend({
 
         runningXHRs.push(this.getReport(this.get('reportPath'), parameters, reportData => {
           this.showReport(reportData);
+          this.set('_loading', false);
         }));
 
         this.set('_runningXHRs', runningXHRs);
@@ -613,6 +615,7 @@ export default Ember.Component.extend({
         const runningXHRs = this.get('_runningXHRs') || [];
         this._abortRunningXHRs();
 
+        this.set('_loading', true);
         this.decrementProperty('reportCurrentPage');
         const parameters = Object.assign(
           {},
@@ -621,6 +624,7 @@ export default Ember.Component.extend({
 
         runningXHRs.push(this.getReport(this.get('reportPath'), parameters, reportData => {
           this.showReport(reportData);
+          this.set('_loading', false);
         }));
 
         this.set('_runningXHRs', runningXHRs);

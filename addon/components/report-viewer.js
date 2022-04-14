@@ -550,8 +550,16 @@ export default Ember.Component.extend({
 
         const runningXHRs = this.get('_runningXHRs') || [];
         this._abortRunningXHRs();
+        
+        const parameters = Object.assign(
+          {},
+          this._getNormalizedParameters(this.get('reportParameters')),
+          {
+            'output-target': ReportFormat.FullHtml,
+          }
+        );
 
-        runningXHRs.push(this.getReport(this.get('reportPath'), this._getNormalizedParameters(this.get('reportParameters')), reportData => {
+        runningXHRs.push(this.getReport(this.get('reportPath'), parameters, reportData => {
           this.set('_loading', false);
 
           const printWindow = window.open('', 'PRINT', 'height=400,width=600');

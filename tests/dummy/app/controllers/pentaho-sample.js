@@ -1,8 +1,8 @@
-import Ember from 'ember';
+import Controller from '@ember/controller';
 import ReportParameter from '../utils/report-parameter';
 import ReportFormat from '../utils/report-output-format';
 
-export default Ember.Controller.extend({
+export default Controller.extend({
   reportName: 'Пример отчета Pentaho',
   locales: ['ru'],
   reportParameters: {},
@@ -45,10 +45,10 @@ export default Ember.Controller.extend({
 
   actions: {
     selectGender() {
-      this.set('reportParameters.gender.value', this.get('genderresult'));
+      this.set('reportParameters.gender.value', this.genderresult);
     },
     selectCity() {
-      this.set('reportParameters.city.value', this.get('selectedCity'));
+      this.set('reportParameters.city.value', this.selectedCity);
     },
     selectdocs() {
       const favorite = [];

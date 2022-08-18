@@ -1,3 +1,8 @@
+import { copy } from '@ember/object/internals';
+import { isNone } from '@ember/utils';
+import { observer, computed } from '@ember/object';
+import { inject as service } from '@ember/service';
+import Component from '@ember/component';
 import Ember from 'ember';
 import moment from 'moment';
 import layout from '../templates/components/report-viewer';
@@ -7,25 +12,25 @@ import ReportFormat from '../utils/report-output-format';
  * Компонент для отображения интерфейса отчета.
  * @class report-viewer
  */
-export default Ember.Component.extend({
+export default Component.extend({
   /**
    * Сервис для работы с локализацией переменных.
    * @property i18n
    * @type Class
    */
-  i18n: Ember.inject.service(),
+  i18n: service(),
   /**
   * Сервис для работы со всплывающими окнами.
   * @property notifications
   * @type Class
   */
-  notifications: Ember.inject.service('notification-messages'),
+  notifications: service('notification-messages'),
   /**
    * Сервис для работы с файлом конфигурации.
    * @property config
    * @type Class
    */
-  config: Ember.inject.service(),
+  config: service(),
 
   layout,
   /**
@@ -199,7 +204,7 @@ export default Ember.Component.extend({
 
   init() {
     this._super();
-    const config = this.get('config');
+    const config = this.config;
     this.set('_reportAPIEndpoint', config.get('report.reportWebApi'));
 
     this.set('validOutputType', [ReportFormat.PageableHtml, ReportFormat.FullHtml]);
@@ -215,7 +220,7 @@ export default Ember.Component.extend({
    */
   getReport(path, parameters, onDone, onFail) {
     Object.assign(parameters, { reportPath: path });
-    return this._sendPostRequest(`${this.get('_reportAPIEndpoint')}getReport/`, parameters, 'json', onDone, onFail);
+    return this._sendPostRequest(`${this._reportAPIEndpoint}getReport/`, parameters, 'json', onDone, onFail);
   },
   /**
    * Метод для получения количества страниц из системы отчетов.
@@ -228,7 +233,7 @@ export default Ember.Component.extend({
    */
   getReportPagesCount(path, parameters, onDone, onFail) {
     Object.assign(parameters, { reportPath: path });
-    return this._sendPostRequest(`${this.get('_reportAPIEndpoint')}getPageCount/`, parameters, '', onDone, onFail);
+    return this._sendPostRequest(`${this._reportAPIEndpoint}getPageCount/`, parameters, '', onDone, onFail);
   },
   /**
    * Метод для получения файл для экспорта из системы отчетов.
@@ -241,7 +246,7 @@ export default Ember.Component.extend({
    */
   getExportReportData(path, parameters, onDone, onFail) {
     Object.assign(parameters, { reportPath: path });
-    return this._sendPostRequest(`${this.get('_reportAPIEndpoint')}export/`, parameters, 'blob', onDone, onFail);
+    return this._sendPostRequest(`${this._reportAPIEndpoint}export/`, parameters, 'blob', onDone, onFail);
   },
 
   /**
@@ -249,8 +254,8 @@ export default Ember.Component.extend({
   * ибо оно формируется не мгновенно
   * @method reportPagesCountObservation
   */
-  reportPagesCountObservation: Ember.observer('reportPagesCount', function () {
-    if (this.get('reportCurrentPage') !== this.get('reportPagesCount')) {
+  reportPagesCountObservation: observer('reportPagesCount', function () {
+    if (this.reportCurrentPage !== this.reportPagesCount) {
       this.set('isNextButtonDisabled', false);
     }
   }),
@@ -259,16 +264,16 @@ export default Ember.Component.extend({
    * Слушатель изменений флага на необходимость перестроить отчет.
    * @method reportRefreshObservation
    */
-  reportRefreshObservation: Ember.observer('needRefresh', function () {
-    if (this.get('needRefresh') === true) {
+  reportRefreshObservation: observer('needRefresh', function () {
+    if (this.needRefresh === true) {
       this.send('buildReport');
       this.set('needRefresh', false);
     }
   }),
 
-  reportDefaultOutput: Ember.computed('defaultOutputType', function () {
-    const result = this.get('defaultOutputType');
-    if (Ember.isNone(result) || !this.get('validOutputType').find(format => format === result)) {
+  reportDefaultOutput: computed('defaultOutputType', function () {
+    const result = this.defaultOutputType;
+    if (isNone(result) || !this.validOutputType.find(format => format === result)) {
       return ReportFormat.PageableHtml;
     } else {
       return result;
@@ -375,7 +380,7 @@ export default Ember.Component.extend({
    * @returns {Object} Преобразованные значения параметра в JSON объекты.
    */
   _getNormalizedParameters(parameters) {
-    const normalizedParameters = Ember.copy(parameters);
+    const normalizedParameters = copy(parameters);
 
     Object.keys(normalizedParameters).forEach(key => {
       normalizedParameters[key].set('value', this._tryParseJSON(normalizedParameters[key].get('value')) || normalizedParameters[key].get('value'));
@@ -408,7 +413,7 @@ export default Ember.Component.extend({
    * @method _abortRunningXHRs
    */
   _abortRunningXHRs() {
-    const runningXHRs = this.get('_runningXHRs') || [];
+    const runningXHRs = this._runningXHRs || [];
     if (runningXHRs.length) {
       let xhr = runningXHRs.pop();
       while (xhr) {
@@ -440,20 +445,20 @@ export default Ember.Component.extend({
       try {
         this.set('_loading', true);
         this._callFunctionIfDefine(this.beforeReportBuildFunction);
-        const runningXHRs = this.get('_runningXHRs') || [];
+        const runningXHRs = this._runningXHRs || [];
         this._abortRunningXHRs();
 
-        const parameters = Object.assign(this._getNormalizedParameters(this.get('reportParameters')),
-          { 'output-target': this.get('reportDefaultOutput') });
+        const parameters = Object.assign(this._getNormalizedParameters(this.reportParameters),
+          { 'output-target': this.reportDefaultOutput });
 
-        runningXHRs.push(this.getReport(this.get('reportPath'), parameters, reportData => {
+        runningXHRs.push(this.getReport(this.reportPath, parameters, reportData => {
           this.set('_loading', false);
           this.showReport(reportData);
         }));
 
-        let pageCount = this.get('reportPagesCount');
+        let pageCount = this.reportPagesCount;
 
-        runningXHRs.push(this.getReportPagesCount(this.get('reportPath'), parameters, data => {
+        runningXHRs.push(this.getReportPagesCount(this.reportPath, parameters, data => {
           let pageCount = parseInt(data);
           if (pageCount < 0) {
             pageCount = 1;
@@ -466,9 +471,9 @@ export default Ember.Component.extend({
         this.set('_runningXHRs', runningXHRs);
       } catch (e) {
         this.set('_loading', false);
-        Ember.Logger.log(this.get('i18n').t('ember-flexberry-analytics.error-on-report-build'), e);
+        Ember.Logger.log(this.i18n.t('ember-flexberry-analytics.error-on-report-build'), e);
 
-        this.get('notifications').error(this.get('i18n').t('ember-flexberry-analytics.error-on-report-build-notification'), {
+        this.notifications.error(this.i18n.t('ember-flexberry-analytics.error-on-report-build-notification'), {
           autoClear: true,
           clearDuration: 7000
         });
@@ -506,32 +511,32 @@ export default Ember.Component.extend({
 
         this.set('_loading', true);
 
-        const runningXHRs = this.get('_runningXHRs') || [];
+        const runningXHRs = this._runningXHRs || [];
         this._abortRunningXHRs();
 
         const parameters = Object.assign(
           {},
-          this._getNormalizedParameters(this.get('reportParameters')),
+          this._getNormalizedParameters(this.reportParameters),
           {
             'output-target': pentahoFormat,
-            reportName: this.get('reportName')
+            reportName: this.reportName
           }
         );
 
-        runningXHRs.push(this.getExportReportData(this.get('reportPath'), parameters, (fileData) => {
+        runningXHRs.push(this.getExportReportData(this.reportPath, parameters, (fileData) => {
           this.set('_loading', false);
           this._downloadFile(
             fileData,
-            `${this.get('reportName')} на ${moment().format('YYYY-MM-DD')}.${exportFormat}`,
+            `${this.reportName} на ${moment().format('YYYY-MM-DD')}.${exportFormat}`,
             fileType);
         }));
 
         this.set('_runningXHRs', runningXHRs);
       } catch (e) {
         this.set('_loading', false);
-        Ember.Logger.log(this.get('i18n').t('ember-flexberry-analytics.error-on-report-export'), e);
+        Ember.Logger.log(this.i18n.t('ember-flexberry-analytics.error-on-report-export'), e);
 
-        this.get('notifications').error(this.get('i18n').t('ember-flexberry-analytics.error-on-report-export-notification'), {
+        this.notifications.error(this.i18n.t('ember-flexberry-analytics.error-on-report-export-notification'), {
           autoClear: true,
           clearDuration: 7000
         });
@@ -548,18 +553,18 @@ export default Ember.Component.extend({
       try {
         this.set('_loading', true);
 
-        const runningXHRs = this.get('_runningXHRs') || [];
+        const runningXHRs = this._runningXHRs || [];
         this._abortRunningXHRs();
         
         const parameters = Object.assign(
           {},
-          this._getNormalizedParameters(this.get('reportParameters')),
+          this._getNormalizedParameters(this.reportParameters),
           {
             'output-target': ReportFormat.PDF,
           }
         );
 
-        runningXHRs.push(this.getExportReportData(this.get('reportPath'), parameters, reportData => {
+        runningXHRs.push(this.getExportReportData(this.reportPath, parameters, reportData => {
           this.set('_loading', false);
           const blob = new Blob([reportData], { type: 'application/pdf', lastModified: Date.now });
           const url = window.URL.createObjectURL(blob);
@@ -574,9 +579,9 @@ export default Ember.Component.extend({
         this.set('_runningXHRs', runningXHRs);
       } catch (e) {
         this.set('_loading', false);
-        Ember.Logger.log(this.get('i18n').t('ember-flexberry-analytics.error-on-report-print'), e);
+        Ember.Logger.log(this.i18n.t('ember-flexberry-analytics.error-on-report-print'), e);
 
-        this.get('notifications').error(this.get('i18n').t('ember-flexberry-analytics.error-on-report-print-notification'), {
+        this.notifications.error(this.i18n.t('ember-flexberry-analytics.error-on-report-print-notification'), {
           autoClear: true,
           clearDuration: 7000
         });
@@ -590,19 +595,19 @@ export default Ember.Component.extend({
      * @method actions.getNextPage
      */
     getNextPage() {
-      if (this.get('reportCurrentPage') + 1 <= this.get('reportPagesCount')) {
+      if (this.reportCurrentPage + 1 <= this.reportPagesCount) {
 
-        const runningXHRs = this.get('_runningXHRs') || [];
+        const runningXHRs = this._runningXHRs || [];
         this._abortRunningXHRs();
 
         this.set('_loading', true);
         const parameters = Object.assign(
           {},
-          this._getNormalizedParameters(this.get('reportParameters')),
-          { 'accepted-page': this.get('reportCurrentPage') });
+          this._getNormalizedParameters(this.reportParameters),
+          { 'accepted-page': this.reportCurrentPage });
         this.incrementProperty('reportCurrentPage');
 
-        runningXHRs.push(this.getReport(this.get('reportPath'), parameters, reportData => {
+        runningXHRs.push(this.getReport(this.reportPath, parameters, reportData => {
           this.showReport(reportData);
           this.set('_loading', false);
         }));
@@ -611,7 +616,7 @@ export default Ember.Component.extend({
       }
 
       this.set("isPrevButtonDisabled", false);
-      if (this.get('reportCurrentPage') === this.get('reportPagesCount')) {
+      if (this.reportCurrentPage === this.reportPagesCount) {
         this.set("isNextButtonDisabled", true);
       }
     },
@@ -621,19 +626,19 @@ export default Ember.Component.extend({
      * @method actions.getPrevPage
      */
     getPrevPage() {
-      if (this.get('reportCurrentPage') > 1) {
+      if (this.reportCurrentPage > 1) {
 
-        const runningXHRs = this.get('_runningXHRs') || [];
+        const runningXHRs = this._runningXHRs || [];
         this._abortRunningXHRs();
 
         this.set('_loading', true);
         this.decrementProperty('reportCurrentPage');
         const parameters = Object.assign(
           {},
-          this._getNormalizedParameters(this.get('reportParameters')),
-          { 'accepted-page': this.get('reportCurrentPage') - 1 });
+          this._getNormalizedParameters(this.reportParameters),
+          { 'accepted-page': this.reportCurrentPage - 1 });
 
-        runningXHRs.push(this.getReport(this.get('reportPath'), parameters, reportData => {
+        runningXHRs.push(this.getReport(this.reportPath, parameters, reportData => {
           this.showReport(reportData);
           this.set('_loading', false);
         }));
@@ -642,7 +647,7 @@ export default Ember.Component.extend({
       }
 
       this.set("isNextButtonDisabled", false);
-      if (this.get('reportCurrentPage') === 1) {
+      if (this.reportCurrentPage === 1) {
         this.set("isPrevButtonDisabled", true);
       }
     },
@@ -655,7 +660,7 @@ export default Ember.Component.extend({
       this._abortRunningXHRs();
       this.set('_loading', false);
 
-      this.get('notifications').info(this.get('i18n').t('ember-flexberry-analytics.cancel-report-build'), {
+      this.notifications.info(this.i18n.t('ember-flexberry-analytics.cancel-report-build'), {
         autoClear: true,
         clearDuration: 7000,
         cssClasses: 'ember-cli-notification-info'

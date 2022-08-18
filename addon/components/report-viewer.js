@@ -309,7 +309,7 @@ export default Component.extend({
     onSuccess = onSuccess || function (data) { return data; };
 
     onError = onError || function (e) {
-      _this._loading = false;
+      _this.set('_loading', false);
       if (e.statusText !== 'abort') {
         console.log(e);
       }

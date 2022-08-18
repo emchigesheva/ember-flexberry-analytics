@@ -5,7 +5,7 @@ module('Unit | Utility | enum functions', function() {
   // Replace this with your real tests.
   test('it works', function(assert) {
     const value = 'testvalue';
-    let result = enumFunctions.Enumeration({item:value});
+    let result = enumFunctions.Enumeration({item:value,});
 
     assert.equal(result.item, value,'should be value "testvalue"');
   });

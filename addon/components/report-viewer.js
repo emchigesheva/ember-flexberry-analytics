@@ -200,10 +200,12 @@ export default Component.extend({
    * @property validOutputType
    * @type  ReportFormat[]
    */
-  validOutputType: [],
+  validOutputType: undefined,
 
   init() {
     this._super();
+
+    this.validOutputType = this.validOutputType || [];
     const config = this.config;
     this.set('_reportAPIEndpoint', config.get('report.reportWebApi'));
 
@@ -219,7 +221,7 @@ export default Component.extend({
    * @returns {Object} Разметка отчета.
    */
   getReport(path, parameters, onDone, onFail) {
-    Object.assign(parameters, { reportPath: path });
+    Object.assign(parameters, { reportPath: path, });
     return this._sendPostRequest(`${this._reportAPIEndpoint}getReport/`, parameters, 'json', onDone, onFail);
   },
   /**
@@ -232,7 +234,7 @@ export default Component.extend({
    * @returns {Object} Количество страниц отчета.
    */
   getReportPagesCount(path, parameters, onDone, onFail) {
-    Object.assign(parameters, { reportPath: path });
+    Object.assign(parameters, { reportPath: path, });
     return this._sendPostRequest(`${this._reportAPIEndpoint}getPageCount/`, parameters, '', onDone, onFail);
   },
   /**
@@ -245,7 +247,7 @@ export default Component.extend({
    * @returns {Object} Бинарный файл для экспорта.
    */
   getExportReportData(path, parameters, onDone, onFail) {
-    Object.assign(parameters, { reportPath: path });
+    Object.assign(parameters, { reportPath: path, });
     return this._sendPostRequest(`${this._reportAPIEndpoint}export/`, parameters, 'blob', onDone, onFail);
   },
 
@@ -273,7 +275,7 @@ export default Component.extend({
 
   reportDefaultOutput: computed('defaultOutputType', function () {
     const result = this.defaultOutputType;
-    if (isNone(result) || !this.validOutputType.find(format => format === result)) {
+    if (isNone(result) || !this.validOutputType.find((format) => format === result)) {
       return ReportFormat.PageableHtml;
     } else {
       return result;
@@ -342,11 +344,12 @@ export default Component.extend({
   _downloadFile(fileContent, fileName, fileType) {
     // (см. https://stackoverflow.com/a/23797348)
     const blob = typeof File === 'function' ?
-      new File([fileContent], fileName, { type: fileType })
-      : new Blob([fileContent], { type: fileType, lastModified: Date.now });
+      new File([fileContent], fileName, { type: fileType, })
+      : new Blob([fileContent], { type: fileType, lastModified: Date.now, });
 
     if (typeof window.navigator.msSaveBlob !== 'undefined') {
-      // IE workaround for "HTML7007: One or more blob URLs were revoked by closing the blob for which they were created. These URLs will no longer resolve as the data backing the URL has been freed."
+      // IE workaround for "HTML7007: One or more blob URLs were revoked by closing the blob for which they were created.
+      // These URLs will no longer resolve as the data backing the URL has been freed."
       window.navigator.msSaveBlob(blob, fileName);
     } else {
       const URL = window.URL || window.webkitURL;
@@ -382,7 +385,7 @@ export default Component.extend({
   _getNormalizedParameters(parameters) {
     const normalizedParameters = copy(parameters);
 
-    Object.keys(normalizedParameters).forEach(key => {
+    Object.keys(normalizedParameters).forEach((key) => {
       normalizedParameters[key].set('value', this._tryParseJSON(normalizedParameters[key].get('value')) || normalizedParameters[key].get('value'));
 
       if (normalizedParameters[key].get('value') instanceof Date) {
@@ -449,20 +452,19 @@ export default Component.extend({
         this._abortRunningXHRs();
 
         const parameters = Object.assign(this._getNormalizedParameters(this.reportParameters),
-          { 'output-target': this.reportDefaultOutput });
+          { 'output-target': this.reportDefaultOutput, });
 
-        runningXHRs.push(this.getReport(this.reportPath, parameters, reportData => {
+        runningXHRs.push(this.getReport(this.reportPath, parameters, (reportData) => {
           this.set('_loading', false);
           this.showReport(reportData);
         }));
 
-        let pageCount = this.reportPagesCount;
-
-        runningXHRs.push(this.getReportPagesCount(this.reportPath, parameters, data => {
+        runningXHRs.push(this.getReportPagesCount(this.reportPath, parameters, (data) => {
           let pageCount = parseInt(data);
           if (pageCount < 0) {
             pageCount = 1;
           }
+
           this.set('reportPagesCount', pageCount);
         }));
 
@@ -475,7 +477,7 @@ export default Component.extend({
 
         this.notifications.error(this.i18n.t('ember-flexberry-analytics.error-on-report-build-notification'), {
           autoClear: true,
-          clearDuration: 7000
+          clearDuration: 7000,
         });
 
         this._callFunctionIfDefine(this.onErrorFunction);
@@ -519,7 +521,7 @@ export default Component.extend({
           this._getNormalizedParameters(this.reportParameters),
           {
             'output-target': pentahoFormat,
-            reportName: this.reportName
+            reportName: this.reportName,
           }
         );
 
@@ -538,7 +540,7 @@ export default Component.extend({
 
         this.notifications.error(this.i18n.t('ember-flexberry-analytics.error-on-report-export-notification'), {
           autoClear: true,
-          clearDuration: 7000
+          clearDuration: 7000,
         });
 
         this._callFunctionIfDefine(this.onErrorFunction);
@@ -564,9 +566,9 @@ export default Component.extend({
           }
         );
 
-        runningXHRs.push(this.getExportReportData(this.reportPath, parameters, reportData => {
+        runningXHRs.push(this.getExportReportData(this.reportPath, parameters, (reportData) => {
           this.set('_loading', false);
-          const blob = new Blob([reportData], { type: 'application/pdf', lastModified: Date.now });
+          const blob = new Blob([reportData], { type: 'application/pdf', lastModified: Date.now, });
           const url = window.URL.createObjectURL(blob);
 
           const printWindow = window.open(url, 'PRINT', 'height=400,width=600');
@@ -583,7 +585,7 @@ export default Component.extend({
 
         this.notifications.error(this.i18n.t('ember-flexberry-analytics.error-on-report-print-notification'), {
           autoClear: true,
-          clearDuration: 7000
+          clearDuration: 7000,
         });
 
         this._callFunctionIfDefine(this.onErrorFunction);
@@ -604,10 +606,10 @@ export default Component.extend({
         const parameters = Object.assign(
           {},
           this._getNormalizedParameters(this.reportParameters),
-          { 'accepted-page': this.reportCurrentPage });
+          { 'accepted-page': this.reportCurrentPage, });
         this.incrementProperty('reportCurrentPage');
 
-        runningXHRs.push(this.getReport(this.reportPath, parameters, reportData => {
+        runningXHRs.push(this.getReport(this.reportPath, parameters, (reportData) => {
           this.showReport(reportData);
           this.set('_loading', false);
         }));
@@ -636,9 +638,9 @@ export default Component.extend({
         const parameters = Object.assign(
           {},
           this._getNormalizedParameters(this.reportParameters),
-          { 'accepted-page': this.reportCurrentPage - 1 });
+          { 'accepted-page': this.reportCurrentPage - 1, });
 
-        runningXHRs.push(this.getReport(this.reportPath, parameters, reportData => {
+        runningXHRs.push(this.getReport(this.reportPath, parameters, (reportData) => {
           this.showReport(reportData);
           this.set('_loading', false);
         }));
@@ -663,8 +665,8 @@ export default Component.extend({
       this.notifications.info(this.i18n.t('ember-flexberry-analytics.cancel-report-build'), {
         autoClear: true,
         clearDuration: 7000,
-        cssClasses: 'ember-cli-notification-info'
+        cssClasses: 'ember-cli-notification-info',
       });
-    }
-  }
+    },
+  },
 });

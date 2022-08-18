@@ -4,7 +4,7 @@ import { isArray } from '@ember/array';
 export function Enumeration(dictionary) {
   let local = {};
   if (isArray(dictionary)) {
-    dictionary.forEach(element => local[element] = element);
+    dictionary.forEach((element) => { local[element] = element });
   } else {
     local = dictionary;
   }

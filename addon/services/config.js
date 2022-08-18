@@ -13,7 +13,7 @@ export default Service.extend({
    * @type Object
    */
   _config: computed(function() {
-    return getOwner(this)._lookupFactory('config:environment');
+    return getOwner(this).factoryFor('config:environment').class;
   }),
 
   /**
@@ -24,5 +24,5 @@ export default Service.extend({
    */
   unknownProperty(path) {
     return get(this, `_config.${path}`);
-  }
+  },
 });

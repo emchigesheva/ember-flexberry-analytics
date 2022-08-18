@@ -24,5 +24,5 @@ export default EmberObject.extend({
    * @property value
    * @type String
    */
-  value: null
+  value: null,
 });

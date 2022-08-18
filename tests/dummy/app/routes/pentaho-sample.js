@@ -8,6 +8,6 @@ export default Route.extend({
         this.controller.set('needRefreshReport', true);
       });
       return true;
-    }
-  }
+    },
+  },
 });

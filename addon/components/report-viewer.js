@@ -555,17 +555,20 @@ export default Ember.Component.extend({
           {},
           this._getNormalizedParameters(this.get('reportParameters')),
           {
-            'output-target': ReportFormat.FullHtml,
+            'output-target': ReportFormat.PDF,
           }
         );
 
-        runningXHRs.push(this.getReport(this.get('reportPath'), parameters, reportData => {
+        runningXHRs.push(this.getExportReportData(this.get('reportPath'), parameters, reportData => {
           this.set('_loading', false);
+          const blob = new Blob([reportData], { type: 'application/pdf', lastModified: Date.now });
+          const url = window.URL.createObjectURL(blob);
 
-          const printWindow = window.open('', 'PRINT', 'height=400,width=600');
-          printWindow.document.write(reportData);
+          const printWindow = window.open(url, 'PRINT', 'height=400,width=600');
           printWindow.print();
-          printWindow.close();
+          // Наблюдаются странности при печати и закрытии именно при таком открытии.
+          // Пока поправить не получилось, но печать отчета в виде пдф более приоритетна, чем закрытие окна.
+          // printWindow.close();
         }));
 
         this.set('_runningXHRs', runningXHRs);
